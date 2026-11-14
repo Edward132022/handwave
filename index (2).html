@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d1533">
+<title>HandWave</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Noto+Music&display=swap" rel="stylesheet">
+<style>
+/* ===================== Tokens =====================
+   Paleta tomada de la referencia: fondo morado nocturno, superficies violeta
+   y un degradado rosa → violeta → azul para todo lo que suena.
+   60-30-10: fondo y superficies (60), texto lavanda (30), degradado (10).
+   Cian = presión y conexión. Rojo = solo errores.
+   Escala tipográfica 1.25. Espaciado en múltiplos de 8. */
+:root {
+  --fondo: #1d1533;
+  --fondo-2: #241a3d;
+  --sup: #2c2150;
+  --sup-2: #352a5e;
+  --borde: #45386f;
+  --texto: #f5f0ff;
+  --texto-2: #b3a6d4;
+  --texto-3: #7d70a3;
+  --rosa: #ff2e7e;
+  --violeta: #8b3dff;
+  --azul: #3d7bff;
+  --cian: #4cc9f0;
+  --alerta: #ff5a4e;
+  --grad: linear-gradient(120deg, var(--rosa) 0%, var(--violeta) 55%, var(--azul) 100%);
+
+  --s2: 8px; --s3: 16px; --s4: 24px; --s5: 32px; --s6: 48px; --s7: 64px;
+  --t-1: .8rem; --t0: 1rem; --t1: 1.25rem; --t2: 1.563rem; --t3: 1.953rem; --t4: 2.441rem;
+
+  --vel: 0;
+  --vib: 0;
+  --display: "Bricolage Grotesque", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --letra: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --musica: "Noto Music", "Bravura Text", "Segoe UI Symbol", serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh;
+  color: var(--texto);
+  font: 400 var(--t0)/1.5 var(--letra);
+  background:
+    radial-gradient(900px 600px at 10% -10%, rgb(139 61 255 / .22), transparent 60%),
+    radial-gradient(700px 500px at 100% 0%, rgb(255 46 126 / .12), transparent 60%),
+    var(--fondo);
+  background-attachment: fixed;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--cian); outline-offset: 3px; }
+.oculto { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ===================== Barra superior ===================== */
+.barra {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: var(--s3);
+  padding: 12px var(--s4);
+  background: rgb(29 21 51 / .82);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--borde);
+}
+.marca { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 var(--t1)/1 var(--display); letter-spacing: -.02em; }
+.marca svg { width: 34px; height: 34px; flex: none; }
+.marca small { display: block; font: 400 var(--t-1)/1.3 var(--letra); color: var(--texto-2); letter-spacing: 0; }
+.estado {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  margin: 0 0 0 auto; padding: 7px 14px 7px 12px;
+  border: 1px solid var(--borde); border-radius: 999px;
+  font-size: .9rem; color: var(--texto-2); background: var(--fondo-2);
+  white-space: nowrap; max-width: 46vw; overflow: hidden; text-overflow: ellipsis;
+}
+.estado i { width: 9px; height: 9px; border-radius: 50%; background: var(--texto-3); flex: none; }
+.estado[data-s="conectado"] { border-color: rgb(76 201 240 / .6); color: var(--texto); }
+.estado[data-s="conectado"] i { background: var(--cian); box-shadow: 0 0 10px var(--cian); }
+.estado[data-s="buscando"] { border-color: var(--violeta); color: var(--texto); }
+.estado[data-s="buscando"] i { background: var(--rosa); animation: latido 1s infinite; }
+.estado[data-s="error"] { border-color: var(--alerta); color: #ffd2cf; }
+.estado[data-s="error"] i { background: var(--alerta); }
+@keyframes latido { 50% { opacity: .25; } }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  min-height: 48px; padding: 12px 22px; border-radius: 999px; cursor: pointer;
+  border: 0; background: var(--grad); color: #fff; font-weight: 700;
+  box-shadow: 0 6px 22px rgb(255 46 126 / .28);
+  transition: transform .08s, box-shadow .15s, filter .15s;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); }
+.btn svg { width: 20px; height: 20px; flex: none; }
+.btn.sec, .btn.conectado { background: transparent; border: 1.5px solid var(--borde); box-shadow: none; color: var(--texto); }
+.btn.sec:hover, .btn.conectado:hover { border-color: var(--texto-2); filter: none; }
+.btn-icono { min-height: 44px; padding: 10px 16px; font-size: .9rem; }
+
+/* ===================== Estructura ===================== */
+.app {
+  max-width: 1240px; margin: 0 auto; padding: var(--s4) var(--s4) var(--s7);
+  display: grid; gap: var(--s5); grid-template-columns: minmax(0, 1fr);
+}
+.principal, .lateral { display: contents; }
+.a-guia { order: 0; } .a-escenario { order: 1; } .a-indicadores { order: 2; } .a-mano { order: 3; }
+.a-teclado { order: 4; } .a-pentagrama { order: 5; } .a-panel { order: 6; }
+@media (min-width: 1000px) {
+  .app { grid-template-columns: minmax(0, 7fr) minmax(340px, 5fr); column-gap: var(--s6); align-items: start; }
+  .principal { display: grid; gap: var(--s5); grid-column: 1; grid-row: 1; }
+  .lateral { display: grid; gap: var(--s5); grid-column: 2; grid-row: 1; position: sticky; top: 88px; }
+}
+
+.tarjeta { background: var(--sup); border: 1px solid var(--borde); border-radius: 20px; padding: var(--s4); }
+h2 { margin: 0 0 var(--s3); font: 700 var(--t1)/1.2 var(--display); letter-spacing: -.01em; }
+.nota-pie { margin: var(--s2) 0 0; color: var(--texto-2); font-size: .9rem; }
+
+/* ===================== Guía inicial ===================== */
+.guia { position: relative; background: var(--sup); border-radius: 20px; padding: var(--s4); }
+.guia::before {
+  content: ""; position: absolute; inset: 0; border-radius: 20px; padding: 1.5px;
+  background: var(--grad); pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.guia[hidden] { display: none; }
+.guia ol { list-style: none; margin: 0 0 var(--s4); padding: 0; display: grid; gap: var(--s3); counter-reset: paso; }
+.guia li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: start; counter-increment: paso; }
+.guia li::before {
+  content: counter(paso); width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center; font: 700 1rem/1 var(--display);
+  border: 1.5px solid var(--borde); color: var(--texto-2);
+}
+.guia li.hecho::before { content: "✓"; background: var(--cian); border-color: var(--cian); color: var(--fondo); }
+.guia li b { display: block; }
+.guia li span { color: var(--texto-2); font-size: .95rem; }
+.aviso {
+  margin: 0 0 var(--s3); padding: 14px var(--s3); border-radius: 12px;
+  border: 1px solid var(--alerta); background: rgb(255 90 78 / .12); color: #ffe1de; font-size: .95rem;
+}
+.aviso[hidden] { display: none; }
+
+/* ===================== Escenario: el disco ===================== */
+.escenario { display: grid; justify-items: center; text-align: center; padding: var(--s4) var(--s3) var(--s5); position: relative; }
+.escenario .btn-escena { position: absolute; top: var(--s3); right: var(--s3); }
+.disco { position: relative; width: min(78vw, 340px); aspect-ratio: 1; margin-top: var(--s4); }
+.disco svg.anillo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.anillo .pista { fill: none; stroke: var(--borde); stroke-width: 5; }
+.anillo .arco { fill: none; stroke: url(#gradAnillo); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset .12s; }
+.anillo .punto { fill: var(--cian); filter: drop-shadow(0 0 8px var(--cian)); transition: opacity .2s; }
+.cara {
+  position: absolute; inset: 13%; border-radius: 50%;
+  background: linear-gradient(135deg, var(--rosa) 0%, var(--violeta) 60%, var(--azul) 100%);
+  display: grid; place-items: center;
+  box-shadow: 0 0 60px rgb(255 46 126 / .35), inset 0 0 40px rgb(0 0 0 / .25);
+  transition: filter .3s, box-shadow .3s, transform .1s;
+  filter: saturate(.35) brightness(.6);
+}
+.disco.sonando .cara { filter: none; box-shadow: 0 0 calc(40px + var(--vel) * 70px) rgb(255 46 126 / .55), inset 0 0 40px rgb(0 0 0 / .2); }
+.nota {
+  margin: 0;
+  font-family: var(--display); font-variation-settings: "opsz" 96;
+  font-weight: calc(450 + var(--vel) * 350);
+  font-size: clamp(3.6rem, 17vw, 5.6rem); line-height: 1; letter-spacing: -.04em;
+  color: #fff; text-shadow: 0 2px 18px rgb(29 21 51 / .35);
+  transform-origin: 50% 70%; transition: font-weight .08s;
+}
+.disco.sonando .nota { animation: temblor .16s ease-in-out infinite alternate; }
+.nota.vacia { opacity: .7; font-size: clamp(1.4rem, 6vw, 1.8rem); font-weight: 600; letter-spacing: 0; }
+@keyframes temblor {
+  from { transform: rotate(calc(var(--vib) * -3deg)) translateX(calc(var(--vib) * -5px)); }
+  to   { transform: rotate(calc(var(--vib) *  3deg)) translateX(calc(var(--vib) *  5px)); }
+}
+.pildora {
+  margin: var(--s4) 0 0; padding: 10px 22px; border-radius: 999px; background: var(--grad);
+  font: 700 var(--t0)/1.2 var(--display); letter-spacing: .02em; min-height: 42px;
+  box-shadow: 0 6px 22px rgb(139 61 255 / .35);
+}
+.pildora.vacia { background: var(--sup-2); box-shadow: none; color: var(--texto-2); font-weight: 400; font-family: var(--letra); }
+.detalle { margin: 10px 0 0; color: var(--texto-2); min-height: 1.5em; }
+
+/* Octava: controles tipo reproductor */
+.octava { margin-top: var(--s4); display: grid; justify-items: center; gap: 10px; }
+.octava .fila { display: flex; align-items: center; gap: var(--s4); }
+.redondo {
+  width: 56px; height: 56px; border-radius: 50%; border: 1.5px solid var(--borde);
+  background: var(--fondo-2); display: grid; place-items: center; cursor: pointer;
+  transition: border-color .15s, background .15s, transform .08s;
+}
+.redondo:hover:not(:disabled) { border-color: var(--rosa); }
+.redondo:active:not(:disabled) { transform: scale(.95); }
+.redondo:disabled { opacity: .35; cursor: not-allowed; }
+.redondo svg { width: 22px; height: 22px; }
+.oct-centro {
+  width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; align-content: center;
+  border: 2px solid transparent; background: linear-gradient(var(--fondo-2), var(--fondo-2)) padding-box, var(--grad) border-box;
+}
+.oct-centro b { font: 800 var(--t3)/1 var(--display); }
+.oct-centro small { font-size: .72rem; color: var(--texto-2); }
+.puntos { display: flex; gap: 8px; }
+.puntos button {
+  width: 30px; height: 30px; padding: 0; border: 0; background: transparent; cursor: pointer;
+  display: grid; place-items: center;
+}
+.puntos button i { width: 10px; height: 10px; border-radius: 50%; background: var(--borde); transition: all .15s; }
+.puntos button[aria-pressed="true"] i { width: 26px; border-radius: 6px; background: var(--grad); }
+.octava .ayuda-oct { font-size: .82rem; color: var(--texto-3); margin: 0; }
+@media (hover: none) { .octava .atajos { display: none; } }
+.octava kbd { font: 700 .75rem/1 var(--letra); padding: 3px 6px; border: 1px solid var(--borde); border-radius: 5px; color: var(--texto-2); }
+
+/* Indicadores */
+.indicadores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 640px) { .indicadores { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.ind {
+  background: var(--sup); border: 1px solid var(--borde); border-radius: 16px;
+  padding: 14px; min-height: 108px; display: flex; flex-direction: column; gap: 8px;
+}
+.ind h3 { margin: 0; font: 400 .85rem/1.2 var(--letra); color: var(--texto-2); display: flex; justify-content: space-between; }
+.ind h3 span { font-weight: 700; color: var(--texto); font-variant-numeric: tabular-nums; }
+.ind .valor { font: 700 var(--t1)/1.1 var(--display); display: flex; align-items: center; gap: 8px; margin-top: auto; }
+.palma-icono { width: 28px; height: 28px; transition: transform .35s cubic-bezier(.5,1.6,.5,1); }
+.palma-icono.arriba { transform: rotate(180deg); }
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: auto; }
+.trio span {
+  display: grid; place-items: center; height: 40px; border-radius: 10px;
+  background: var(--fondo-2); font: 400 1.35rem/1 var(--musica); color: var(--texto-3);
+  transition: background .12s, color .12s;
+}
+.trio span.on { background: var(--grad); color: #fff; }
+.niveles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: auto; align-items: end; }
+.niveles span {
+  height: 36px; border-radius: 5px; background: var(--fondo-2);
+  display: grid; place-items: end center; padding-bottom: 3px;
+  font: italic 700 .72rem/1 Georgia, serif; color: var(--texto-3);
+}
+.niveles span:nth-child(1) { height: 18px; } .niveles span:nth-child(2) { height: 23px; }
+.niveles span:nth-child(3) { height: 28px; } .niveles span:nth-child(4) { height: 32px; }
+.niveles span.on { background: var(--cian); color: var(--fondo); }
+.onda { width: 100%; height: 40px; margin-top: auto; }
+.onda path { fill: none; stroke: url(#gradOnda); stroke-width: 3; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.onda line { stroke: var(--borde); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+
+/* ===================== Mano ===================== */
+.mano-vista { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s3); align-items: center; }
+@media (min-width: 640px) { .mano-vista { grid-template-columns: 260px minmax(0, 1fr); } }
+.mano-svg { width: 100%; max-width: 280px; height: auto; margin: 0 auto; display: block; }
+.mano-svg.girando { animation: giro .35s ease-out; }
+@keyframes giro { from { transform: scaleX(.15); } to { transform: scaleX(1); } }
+.mapa { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mapa li {
+  display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 12px;
+  padding: 8px 12px 8px 8px; border-radius: 14px; border: 1px solid var(--borde); background: var(--fondo-2);
+  transition: background .1s, border-color .1s;
+}
+.mapa .icono-fila {
+  width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--borde);
+  display: grid; place-items: center;
+}
+.mapa .icono-fila svg { width: 14px; height: 14px; fill: var(--texto-2); }
+.mapa .titulo b { display: block; font: 700 var(--t0)/1.2 var(--display); }
+.mapa .titulo small { color: var(--texto-2); font-size: .82rem; }
+.mapa .extra { font-size: .82rem; color: var(--texto-2); text-align: right; }
+.mapa li.on { background: rgb(255 46 126 / .14); border-color: var(--rosa); }
+.mapa li.on .icono-fila { background: var(--grad); border-color: transparent; }
+.mapa li.on .icono-fila svg { fill: #fff; }
+
+
+/* Cómo se toca */
+.gestos { list-style: none; margin: 0 0 var(--s3); padding: 0; display: grid; gap: 14px; }
+.gestos li { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start; }
+.g-icono { width: 40px; height: 40px; align-self: start; border-radius: 50%; background: var(--grad); display: grid; place-items: center; color: #fff; }
+.g-icono.g-app { background: var(--fondo-2); border: 1.5px solid var(--borde); color: var(--cian); }
+.g-icono svg { width: 20px; height: 20px; }
+.gestos b { display: block; font: 700 var(--t0)/1.25 var(--display); }
+.gestos li > div > span { display: block; color: var(--texto-2); font-size: .92rem; }
+.gestos small { display: inline-block; margin-top: 4px; font-size: .74rem; color: var(--cian); border: 1px solid rgb(76 201 240 / .4); border-radius: 999px; padding: 2px 8px; }
+.sub { margin: var(--s4) 0 10px; font: 700 var(--t0)/1.2 var(--display); }
+.tabla-dedos { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .95rem; }
+.tabla-dedos th, .tabla-dedos td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--borde); }
+.tabla-dedos thead th { font: 400 .82rem/1.2 var(--letra); color: var(--texto-2); }
+.tabla-dedos td { font: 700 var(--t0)/1.2 var(--display); }
+.tabla-dedos td:first-child { font: 400 .92rem/1.2 var(--letra); color: var(--texto-2); }
+.tabla-dedos .actual { background: rgb(139 61 255 / .16); }
+.tabla-dedos thead .actual { color: var(--texto); font-weight: 700; }
+.tabla-dedos td.on { color: var(--rosa); }
+
+/* ===================== Teclado ===================== */
+.teclado {
+  --g: 4px; position: relative; height: 170px;
+  display: grid; grid-template-columns: repeat(10, 1fr); gap: var(--g);
+  touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.tecla {
+  position: relative; border: 0; border-radius: 0 0 10px 10px;
+  background: #e9e3f7; cursor: pointer; padding: 0 0 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px;
+  font: 700 .78rem/1 var(--letra); color: #4a3d73;
+  transition: background .06s, box-shadow .06s;
+}
+.tecla .dedo-tag {
+  font: 700 .64rem/1 var(--letra); color: #fff; padding: 3px 4px; border-radius: 5px;
+  background: var(--violeta); visibility: hidden;
+}
+.tecla.grupo .dedo-tag { visibility: visible; }
+.tecla.grupo:not(.negra) { background: linear-gradient(180deg, #f3eefc 50%, #e3d2ff); }
+.tecla.negra {
+  position: absolute; top: 0; height: 58%; z-index: 2; border-radius: 0 0 7px 7px;
+  background: #120c22; color: transparent; padding: 0; box-shadow: 0 3px 0 #0b0716;
+}
+.tecla.negra .dedo-tag { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); }
+.tecla.activa {
+  background: linear-gradient(180deg, var(--rosa), var(--violeta)); color: #fff;
+  box-shadow: 0 0 calc(10px + var(--k, 0) * 30px) rgb(255 46 126 / .75);
+}
+.tecla.activa .dedo-tag { background: rgb(255 255 255 / .25); }
+.tecla.negra.activa { background: linear-gradient(180deg, var(--rosa), var(--violeta)); }
+
+/* ===================== Pentagrama ===================== */
+.pentagrama { width: 100%; height: auto; display: block; }
+.pentagrama .linea { stroke: var(--texto-3); stroke-width: 1.2; }
+.pentagrama .clave { font: 400 64px/1 var(--musica); fill: var(--texto-2); }
+.pentagrama .cabeza-n { fill: var(--texto); }
+.pentagrama .actual .cabeza-n { fill: var(--rosa); }
+.pentagrama .acc { font: 400 22px/1 var(--musica); fill: var(--texto); }
+.pentagrama .actual .acc { fill: var(--rosa); }
+.pentagrama .ottava { font: italic 700 11px/1 Georgia, serif; fill: var(--cian); text-anchor: middle; }
+.pentagrama .nombre { font: 700 11px/1 var(--letra); fill: var(--texto-2); text-anchor: middle; }
+.pentagrama .vacio { font: 400 15px/1 var(--letra); fill: var(--texto-2); }
+.pentagrama .nueva { animation: entra .25s ease-out; }
+@keyframes entra { from { opacity: 0; transform: translateX(14px); } }
+
+/* ===================== Panel lateral ===================== */
+.instrumentos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; border: 0; padding: 0; margin: 0 0 var(--s4); }
+.instrumentos label { position: relative; }
+.instrumentos input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+.inst { display: grid; gap: 8px; }
+.portada {
+  position: relative; aspect-ratio: 2 / 1; border-radius: 14px; display: grid; place-items: center;
+  border: 2px solid transparent; transition: border-color .15s, transform .1s;
+}
+.portada svg { width: 56%; height: 56%; }
+.portada svg path { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.p-piano { background: linear-gradient(135deg, #ff2e7e, #8b3dff); }
+.p-marimba { background: linear-gradient(135deg, #ff7a45, #ff2e7e); }
+.p-organo { background: linear-gradient(135deg, #8b3dff, #3d7bff); }
+.p-sinte { background: linear-gradient(135deg, #3d7bff, #4cc9f0); }
+.portada .check {
+  position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; color: var(--fondo); display: none; place-items: center; font: 700 .8rem/1 var(--letra);
+}
+.inst b { font: 700 .95rem/1.2 var(--display); }
+.inst small { display: block; font-size: .78rem; color: var(--texto-2); line-height: 1.3; margin-top: 2px; }
+.instrumentos input:checked + .inst .portada { border-color: #fff; box-shadow: 0 8px 26px rgb(255 46 126 / .3); }
+.instrumentos input:checked + .inst .portada .check { display: grid; }
+.instrumentos input:focus-visible + .inst .portada { outline: 3px solid var(--cian); outline-offset: 3px; }
+
+.control { display: grid; grid-template-columns: 1fr auto; gap: 4px var(--s3); margin-bottom: var(--s3); }
+.control label { font-size: .95rem; color: var(--texto-2); }
+.control output { font-weight: 700; font-variant-numeric: tabular-nums; }
+.control input { grid-column: 1 / -1; }
+input[type=range] { width: 100%; accent-color: var(--rosa); height: 32px; margin: 0; }
+
+details.tarjeta { padding: 0 var(--s4); }
+details.tarjeta[open] { padding-bottom: var(--s4); }
+summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
+  min-height: 60px; font: 700 var(--t1)/1.2 var(--display);
+}
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font: 400 1.6rem/1 var(--letra); color: var(--texto-2); transition: transform .2s; }
+details[open] summary::after { transform: rotate(45deg); }
+
+.seg { display: flex; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; margin: 0 0 var(--s3); }
+.seg legend { padding: 0; margin-bottom: var(--s2); font-size: .95rem; color: var(--texto-2); }
+.seg label { position: relative; flex: 1 1 0; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg span {
+  display: grid; place-items: center; text-align: center; padding: 10px 8px; min-height: 48px;
+  border: 1.5px solid var(--borde); border-radius: 12px; background: var(--fondo-2); font-weight: 700; font-size: .92rem;
+}
+.seg input:checked + span { background: var(--grad); border-color: transparent; color: #fff; }
+.seg input:focus-visible + span { outline: 3px solid var(--cian); outline-offset: 3px; }
+
+.dedos { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); align-items: end; margin: var(--s2) 0 var(--s3); touch-action: none; }
+.dedo {
+  border: 1.5px solid var(--borde); border-radius: 44px 44px 14px 14px; background: var(--fondo-2);
+  cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  gap: 4px; padding: 12px 4px; user-select: none; -webkit-user-select: none;
+  transition: transform .06s, background .06s;
+}
+.dedo b { font: 700 var(--t1)/1 var(--display); }
+.dedo small { font-size: .78rem; color: var(--texto-2); }
+.dedo.activa { background: var(--grad); border-color: transparent; transform: translateY(3px); }
+.dedo.activa small { color: #fff; }
+.dedo[data-i="3"] { min-height: 128px; } .dedo[data-i="2"] { min-height: 144px; }
+.dedo[data-i="1"] { min-height: 132px; } .dedo[data-i="0"] { min-height: 108px; }
+
+.log {
+  font: .82rem/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--texto-2);
+  background: var(--fondo-2); border: 1px solid var(--borde); border-radius: 12px;
+  padding: 10px 12px; max-height: 240px; overflow: auto; margin: 0; white-space: pre-wrap;
+}
+.pie { color: var(--texto-3); font-size: .85rem; margin: 0; }
+
+/* ===================== Modo escenario (proyector) ===================== */
+.salir-escena { display: none; }
+body.escena .barra, body.escena .lateral, body.escena .a-mano, body.escena .a-teclado, body.escena .btn-escena { display: none; }
+body.escena .app { grid-template-columns: 1fr; max-width: 1100px; min-height: 100vh; align-content: center; padding: var(--s5); }
+body.escena .principal { display: grid; grid-column: 1; }
+body.escena .disco { width: min(52vh, 460px); }
+body.escena .nota { font-size: clamp(4rem, 11vh, 8rem); }
+body.escena .escenario { background: transparent; border: 0; }
+body.escena .salir-escena { display: inline-flex; position: fixed; top: var(--s3); right: var(--s3); z-index: 30; }
+
+@media (max-width: 480px) {
+  .barra { padding: var(--s2) var(--s3); gap: var(--s2); flex-wrap: wrap; }
+  .marca small { display: none; }
+  .estado { max-width: 58vw; }
+  .barra .btn { width: 100%; order: 3; }
+  .app { padding: var(--s3) var(--s3) var(--s6); gap: var(--s4); }
+  .tarjeta, .guia { padding: var(--s3); }
+  details.tarjeta { padding: 0 var(--s3); }
+  details.tarjeta[open] { padding-bottom: var(--s3); }
+  .escenario { padding-top: var(--s6); }
+  .teclado { height: 140px; --g: 3px; }
+  .tecla .dedo-tag { font-size: .56rem; padding: 2px; }
+  .ind { min-height: 98px; padding: 12px; }
+  .octava .fila { gap: var(--s3); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .disco.sonando .nota, .estado[data-s="buscando"] i, .mano-svg.girando, .pentagrama .nueva { animation: none; }
+  .palma-icono, .anillo .arco { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gradAnillo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2e7e"/><stop offset=".55" stop-color="#8b3dff"/><stop offset="1" stop-color="#3d7bff"/></linearGradient>
+    <linearGradient id="gradOnda" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff2e7e"/><stop offset="1" stop-color="#3d7bff"/></linearGradient>
+  </defs>
+</svg>
+
+<header class="barra">
+  <h1 class="marca">
+    <svg viewBox="0 0 34 34" aria-hidden="true"><defs><linearGradient id="gMarca" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2e7e"/><stop offset="1" stop-color="#3d7bff"/></linearGradient></defs><circle cx="17" cy="17" r="16" fill="url(#gMarca)"/><path d="M7 18c2.5 0 2.5-6 5-6s2.5 10 5 10 2.5-10 5-10 2.5 6 5 6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
+    <span>HandWave<small>Guante musical</small></span>
+  </h1>
+  <p class="estado" id="estado" data-s="off" role="status"><i></i><span id="estadoTxt">Guante sin conectar</span></p>
+  <button class="btn" id="btnConectar" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10-5 5V2l5 5L7 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="btnTxt">Conectar guante</span>
+  </button>
+</header>
+
+<button class="btn sec salir-escena" id="btnSalir" type="button">Salir de pantalla completa</button>
+
+<main class="app">
+ <div class="lateral">
+  <!-- Guía inicial: se oculta cuando el guante está conectado -->
+  <section class="a-guia guia" id="guia" aria-labelledby="tGuia">
+    <h2 id="tGuia">Para empezar</h2>
+    <p class="aviso" id="aviso" hidden></p>
+    <ol>
+      <li id="paso1"><div><b>Enciende el guante</b><span>Prende el interruptor de la muñequera. El ESP32 tarda unos segundos en estar listo.</span></div></li>
+      <li id="paso2"><div><b>Toca “Conectar guante”</b><span>Elige “Guante MIDI” en la lista que abre el navegador.</span></div></li>
+      <li id="paso3"><div><b>Junta el pulgar con un dedo</b><span>Aprieta más fuerte para que suene más duro. Sacude la mano para el vibrato.</span></div></li>
+    </ol>
+    <button class="btn sec" id="btnProbar" type="button">Probar sin guante</button>
+  </section>
+
+  <aside class="a-panel" style="display:grid;gap:24px">
+    <section class="tarjeta" aria-labelledby="tSonido">
+      <h2 id="tSonido">Sonido</h2>
+      <fieldset class="instrumentos">
+        <legend class="oculto">Instrumento</legend>
+        <label><input type="radio" name="inst" value="piano" checked>
+          <span class="inst"><span class="portada p-piano"><svg viewBox="0 0 44 32" aria-hidden="true"><path d="M3 26V6l4 1c8 3 14 13 34 19"/></svg><span class="check">✓</span></span><span><b>Piano</b><small>Ataque claro, se apaga suave</small></span></span></label>
+        <label><input type="radio" name="inst" value="marimba">
+          <span class="inst"><span class="portada p-marimba"><svg viewBox="0 0 44 32" aria-hidden="true"><path d="M3 26V6l2 0c3 10 8 18 36 20"/></svg><span class="check">✓</span></span><span><b>Marimba</b><small>Golpe corto de madera</small></span></span></label>
+        <label><input type="radio" name="inst" value="organo">
+          <span class="inst"><span class="portada p-organo"><svg viewBox="0 0 44 32" aria-hidden="true"><path d="M3 26V8h32l6 18"/></svg><span class="check">✓</span></span><span><b>Órgano</b><small>Se sostiene mientras tocas</small></span></span></label>
+        <label><input type="radio" name="inst" value="sinte">
+          <span class="inst"><span class="portada p-sinte"><svg viewBox="0 0 44 32" aria-hidden="true"><path d="M3 26l10-20v20l10-20v20l10-20v20l8-14"/></svg><span class="check">✓</span></span><span><b>Sintetizador</b><small>Brillante, cambia con la presión</small></span></span></label>
+      </fieldset>
+      <div class="control">
+        <label for="vol">Volumen</label><output id="oVol" for="vol">80</output>
+        <input type="range" id="vol" min="0" max="100" value="80">
+      </div>
+      <div class="control" style="margin-bottom:0">
+        <label for="prof">Profundidad del vibrato</label><output id="oProf" for="prof">45</output>
+        <input type="range" id="prof" min="0" max="100" value="45">
+      </div>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="tGestos">
+      <h2 id="tGestos">Cómo se toca</h2>
+      <p class="nota-pie" style="margin:-6px 0 16px">Un solo guante. Todo se controla con la mano, salvo la octava y el volumen general, que se cambian aquí en la app.</p>
+      <ul class="gestos">
+        <li><span class="g-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>Junta el pulgar con un dedo</b><span>Suena la nota de ese dedo y se apaga al separarlos.</span><small>Contactos de cinta de cobre</small></div></li>
+        <li><span class="g-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10M8 9l4 4 4-4M5 20h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>Aprieta más o menos</b><span>Cambia la intensidad de cada nota, de pp a ff.</span><small>Sensor de fuerza en el pulgar</small></div></li>
+        <li><span class="g-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-3-6.2M20 4v5h-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>Gira la muñeca</b><span>Palma abajo: DO, RE, MI, FA. Palma arriba: SOL, LA, SI, DO. Cada dedo tiene dos notas.</span><small>Acelerómetro del MPU6050</small></div></li>
+        <li><span class="g-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M6 18l12-10M14 8h4v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>Inclina los dedos</b><span>Hacia arriba la nota sube a sostenido (♯); hacia abajo baja a bemol (♭).</span><small>Acelerómetro del MPU6050</small></div></li>
+        <li><span class="g-icono"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12l3-5 4 10 4-10 4 10 3-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>Sacude la mano</b><span>Vibrato: más fuerte la sacudida, más ondula el sonido.</span><small>Giroscopio del MPU6050</small></div></li>
+        <li><span class="g-icono g-app"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 18h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><b>Octava y volumen general</b><span>Se cambian en la app: 5 octavas (de la 2 a la 6) y el control de volumen.</span><small>Aplicación</small></div></li>
+      </ul>
+      <p class="nota-pie">La nota se decide en el momento de juntar los dedos: si mueves la mano mientras suena, la nota no cambia.</p>
+
+      <h3 class="sub">Notas de cada dedo</h3>
+      <table class="tabla-dedos" id="tablaDedos">
+        <thead><tr><th scope="col">Dedo</th><th scope="col" data-col="0">Palma abajo</th><th scope="col" data-col="1">Palma arriba</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <details class="tarjeta" id="practica">
+      <summary>Tocar sin guante</summary>
+      <p class="nota-pie" style="margin:0 0 16px">Simula el guante: mantén presionado un dedo para que suene.</p>
+      <fieldset class="seg">
+        <legend>Palma</legend>
+        <label><input type="radio" name="palma" value="0" checked><span>Abajo</span></label>
+        <label><input type="radio" name="palma" value="1"><span>Arriba</span></label>
+      </fieldset>
+      <fieldset class="seg">
+        <legend>Inclinación de los dedos</legend>
+        <label><input type="radio" name="alt" value="-1"><span>Abajo ♭</span></label>
+        <label><input type="radio" name="alt" value="0" checked><span>Recta ♮</span></label>
+        <label><input type="radio" name="alt" value="1"><span>Arriba ♯</span></label>
+      </fieldset>
+      <div class="dedos" id="dedos"></div>
+      <div class="control">
+        <label for="simVel">Presión del pulgar</label><output id="oSimVel" for="simVel">96</output>
+        <input type="range" id="simVel" min="25" max="127" value="96">
+      </div>
+      <div class="control" style="margin-bottom:0">
+        <label for="simVib">Sacudida</label><output id="oSimVib" for="simVib">0</output>
+        <input type="range" id="simVib" min="0" max="127" value="0">
+      </div>
+    </details>
+
+    <details class="tarjeta">
+      <summary>Mensajes recibidos</summary>
+      <pre class="log" id="log">Aquí aparecen los mensajes MIDI que llegan del guante.</pre>
+    </details>
+
+    <p class="pie">HandWave, proyecto de Física del Computador, Ingeniería en Multimedia, UMNG.</p>
+  </aside>
+ </div>
+
+ <div class="principal">
+  <!-- Escenario: el disco es el punto focal -->
+  <section class="a-escenario escenario tarjeta" aria-label="Nota que suena">
+    <button class="btn sec btn-icono btn-escena" id="btnEscena" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Pantalla completa
+    </button>
+    <div class="disco" id="disco">
+      <svg class="anillo" viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="pista" cx="100" cy="100" r="94"/>
+        <circle class="arco" id="arco" cx="100" cy="100" r="94" transform="rotate(-90 100 100)" stroke-dasharray="590.6" stroke-dashoffset="590.6"/>
+        <circle class="punto" id="punto" cx="100" cy="6" r="5" opacity="0"/>
+      </svg>
+      <div class="cara"><p class="nota vacia" id="nota">Listo</p></div>
+    </div>
+    <p class="pildora vacia" id="pildora">Junta el pulgar con un dedo</p>
+    <p class="detalle" id="detalle">El anillo muestra la presión del pulgar.</p>
+
+    <div class="octava" role="group" aria-labelledby="tOct">
+      <div class="fila">
+        <button class="redondo" id="octMenos" type="button" aria-label="Bajar una octava">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="oct-centro" aria-live="polite"><small id="tOct">Octava</small><b id="octNum">4</b></div>
+        <button class="redondo" id="octMas" type="button" aria-label="Subir una octava">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="puntos" id="puntos"></div>
+      <p class="ayuda-oct" id="octRango">Del DO4 al DO5. <span class="atajos">Atajos: <kbd>Z</kbd> baja, <kbd>X</kbd> sube.</span></p>
+    </div>
+  </section>
+
+  <section class="a-indicadores indicadores" aria-label="Estado de la mano">
+    <div class="ind">
+      <h3>Palma</h3>
+      <div class="valor">
+        <svg class="palma-icono" id="palmaIcono" viewBox="0 0 30 30" aria-hidden="true"><path d="M15 4v18M8 15l7 7 7-7" fill="none" stroke="#4cc9f0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="palmaTxt">—</span>
+      </div>
+    </div>
+    <div class="ind">
+      <h3>Inclinación</h3>
+      <div class="trio" id="trio" role="img" aria-label="Sin dato de inclinación">
+        <span data-a="-1">♭</span><span data-a="0">♮</span><span data-a="1">♯</span>
+      </div>
+    </div>
+    <div class="ind">
+      <h3>Intensidad <span id="velNum"></span></h3>
+      <div class="niveles" id="niveles" role="img" aria-label="Intensidad 0">
+        <span>pp</span><span>p</span><span>mf</span><span>f</span><span>ff</span>
+      </div>
+    </div>
+    <div class="ind">
+      <h3>Vibrato <span id="vibNum"></span></h3>
+      <svg class="onda" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="20" x2="120" y2="20"/><path id="ondaPath" d="M0 20H120"/></svg>
+    </div>
+  </section>
+
+  <section class="a-mano tarjeta" aria-labelledby="tMano">
+    <h2 id="tMano">Lo que toca cada dedo</h2>
+    <div class="mano-vista">
+      <svg class="mano-svg" id="manoSvg" viewBox="0 0 320 300" role="img" aria-label="Mano"></svg>
+      <ul class="mapa" id="mapa"></ul>
+    </div>
+  </section>
+
+  <section class="a-teclado tarjeta" aria-labelledby="tTeclado">
+    <h2 id="tTeclado">Teclado</h2>
+    <div class="teclado" id="teclado" aria-label="Teclado de una octava y media"></div>
+    <p class="nota-pie">Las teclas marcadas son las que tocan tus dedos ahora. También puedes tocarlas aquí.</p>
+  </section>
+
+  <section class="a-pentagrama tarjeta" aria-labelledby="tPenta">
+    <h2 id="tPenta">Últimas notas</h2>
+    <svg class="pentagrama" id="pentagrama" viewBox="0 0 640 136" role="img" aria-label="Pentagrama con las últimas notas"></svg>
+  </section>
+ </div>
+</main>
+
+<script>
+/* ===================== BLE-MIDI: lectura de paquetes ===================== */
+// Formato (especificación BLE-MIDI 1.0): [cabecera][marca de tiempo][estado][datos]...
+// Puede traer varios mensajes por paquete y usar "running status".
+function bytesDeDatos(status) {
+  const t = status & 0xF0;
+  if (t === 0x80 || t === 0x90 || t === 0xA0 || t === 0xB0 || t === 0xE0) return 2;
+  if (t === 0xC0 || t === 0xD0) return 1;
+  return 0;
+}
+function parseBleMidi(b) {
+  const out = [];
+  if (!b || b.length < 3 || !(b[0] & 0x80)) return out;
+  let i = 1, running = 0;
+  while (i < b.length) {
+    if (b[i] & 0x80) {               // marca de tiempo
+      i++;
+      if (i >= b.length) break;
+      if (b[i] & 0x80) {             // byte de estado
+        const s = b[i];
+        if (s >= 0xF8) { out.push([s]); i++; continue; }      // tiempo real
+        if (s === 0xF0) {                                      // SysEx: se ignora
+          i++; while (i < b.length && b[i] !== 0xF7) i++;
+          i++; running = 0; continue;
+        }
+        if (s >= 0xF1) { running = 0; i++; continue; }         // comunes de sistema: se ignoran
+        running = s; i++;
+      }
+    } else if (!running) { i++; continue; }
+    const n = bytesDeDatos(running);
+    if (!n || i + n > b.length) break;
+    const datos = Array.from(b.slice(i, i + n));
+    if (datos.some(x => x & 0x80)) { i++; continue; }
+    out.push([running, ...datos]);
+    i += n;
+  }
+  return out;
+}
+/* ======================================================================== */
+
+const NOMBRES = ["DO", "DO♯", "RE", "RE♯", "MI", "FA", "FA♯", "SOL", "SOL♯", "LA", "LA♯", "SI"];
+const LETRA = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 };      // clase de altura natural -> letra (DO=0 ... SI=6)
+const LETRAS = ["DO", "RE", "MI", "FA", "SOL", "LA", "SI"];
+const nombre = n => NOMBRES[((n % 12) + 12) % 12];
+const octava = n => Math.floor(n / 12) - 1;
+const freq = n => 440 * Math.pow(2, (n - 69) / 12);
+
+const NOTAS = [[60, 62, 64, 65], [67, 69, 71, 72]];        // igual que el firmware
+const DEDOS = ["Meñique", "Anular", "Medio", "Índice"];      // índice del firmware 0..3
+const ORDEN_MANO = [3, 2, 1, 0];                             // del pulgar hacia afuera
+const DINAMICAS = [["pp", 45], ["p", 65], ["mf", 85], ["f", 105], ["ff", 128]];
+const OCT_MIN = -2, OCT_MAX = 2;                             // 5 octavas: DO2 ... DO6
+const OTTAVA = { "-2": "15mb", "-1": "8vb", "1": "8va", "2": "15ma" };
+
+const $ = id => document.getElementById(id);
+const reducir = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ===================== Estado ===================== */
+const est = {
+  palma: null,        // 0 abajo, 1 arriba, null = sin dato
+  alt: null,          // -1, 0, 1, null = sin dato
+  dedoPendiente: null,
+  vib: 0,
+  conectado: false,
+  oct: 0              // desplazamiento de octava que aplica la app al sonido del guante
+};
+try { const g = parseInt(localStorage.getItem("handwave-octava"), 10); if (g >= OCT_MIN && g <= OCT_MAX) est.oct = g; } catch (_) {}
+const activas = new Map();     // nota recibida -> { vel, dedo }
+const historia = [];           // últimas notas para el pentagrama
+
+/* ===================== Sonido (Web Audio) ===================== */
+let ctx = null, master, compresor, lfo, lfoProf;
+const voces = new Map();       // nota recibida -> voz (guarda su propia altura)
+
+function audio() {
+  if (ctx) { if (ctx.state === "suspended") ctx.resume(); return ctx; }
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ctx = new AC({ latencyHint: "interactive" });
+  compresor = ctx.createDynamicsCompressor();
+  compresor.threshold.value = -14; compresor.ratio.value = 4;
+  master = ctx.createGain();
+  master.gain.value = $("vol").value / 100;
+  master.connect(compresor).connect(ctx.destination);
+  lfo = ctx.createOscillator(); lfo.frequency.value = 5.8;
+  lfoProf = ctx.createGain(); lfoProf.gain.value = 0;
+  lfo.connect(lfoProf); lfo.start();
+  aplicarVibrato();
+  return ctx;
+}
+function aplicarVibrato() {
+  if (!ctx) return;
+  const maxCents = $("prof").value * 1.0;                 // hasta 100 cents (un semitono)
+  lfoProf.gain.setTargetAtTime((est.vib / 127) * maxCents, ctx.currentTime, 0.03);
+}
+
+let ondaOrgano = null;
+const INSTRUMENTOS = {
+  piano(c, f, v, out, osc) {
+    const filtro = c.createBiquadFilter(); filtro.type = "lowpass";
+    filtro.frequency.value = Math.min(18000, 900 + v * 5200 + f * 2);
+    [osc("triangle", f), osc("sine", f * 2, 0.25), osc("sine", f * 3, 0.08)].forEach(o => o.out.connect(filtro));
+    filtro.connect(out);
+    return { ataque: 0.004, pico: 1, sostener: 0.18, caida: 0.9, soltar: 0.35 };
+  },
+  marimba(c, f, v, out, osc) {
+    const a = osc("sine", f), b = osc("sine", f * 4, 0.35 * v), g = c.createGain();
+    b.out.connect(g); g.connect(out); a.out.connect(out);
+    g.gain.setValueAtTime(1, c.currentTime); g.gain.setTargetAtTime(0, c.currentTime, 0.04);
+    return { ataque: 0.002, pico: 1, sostener: 0.0001, caida: 0.35, soltar: 0.18 };
+  },
+  organo(c, f, v, out, osc) {
+    if (!ondaOrgano) {
+      const real = new Float32Array([0, 1, 0.65, 0.4, 0.3, 0.2, 0.12, 0.08, 0.05]);
+      ondaOrgano = c.createPeriodicWave(real, new Float32Array(real.length));
+    }
+    osc(ondaOrgano, f).out.connect(out);
+    return { ataque: 0.02, pico: 0.8, sostener: 0.75, caida: 0.1, soltar: 0.08 };
+  },
+  sinte(c, f, v, out, osc) {
+    const filtro = c.createBiquadFilter(); filtro.type = "lowpass"; filtro.Q.value = 7;
+    const t = c.currentTime;
+    filtro.frequency.setValueAtTime(Math.min(18000, 500 + v * 5000 + f), t);
+    filtro.frequency.setTargetAtTime(300 + v * 1400 + f, t + 0.02, 0.25);
+    [osc("sawtooth", f), osc("sawtooth", f, 1, 8)].forEach(o => o.out.connect(filtro));
+    filtro.connect(out);
+    return { ataque: 0.008, pico: 0.55, sostener: 0.4, caida: 0.3, soltar: 0.25 };
+  }
+};
+
+// n = nota recibida; altura = la que suena después de aplicar la octava
+function sonarOn(n, altura, vel) {
+  const c = audio();
+  sonarOff(n, true);
+  const t = c.currentTime, v = vel / 127;
+  const env = c.createGain(); env.gain.value = 0; env.connect(master);
+  const lista = [];
+  const osc = (tipo, f, gan = 1, det = 0) => {
+    const o = c.createOscillator();
+    if (typeof tipo === "string") o.type = tipo; else o.setPeriodicWave(tipo);
+    o.frequency.value = f; o.detune.value = det;
+    lfoProf.connect(o.detune);
+    const g = c.createGain(); g.gain.value = gan; o.connect(g);
+    o.start(t); lista.push(o);
+    return { o, out: g };
+  };
+  const tipo = document.querySelector("input[name=inst]:checked").value;
+  const p = INSTRUMENTOS[tipo](c, freq(altura), v, env, osc);
+  // Las notas graves se oyen más suaves: se compensa un poco en las octavas bajas
+  const comp = altura < 48 ? 1.35 : altura < 60 ? 1.15 : 1;
+  const pico = 0.42 * Math.pow(v, 1.5) * p.pico * comp;
+  env.gain.setValueAtTime(0, t);
+  env.gain.linearRampToValueAtTime(pico, t + p.ataque);
+  env.gain.setTargetAtTime(pico * p.sostener, t + p.ataque, p.caida / 3);
+  voces.set(n, { env, lista, soltar: p.soltar });
+}
+function sonarOff(n, rapido = false) {
+  const voz = voces.get(n);
+  if (!voz || !ctx) return;
+  voces.delete(n);
+  const t = ctx.currentTime, r = rapido ? 0.015 : voz.soltar;
+  voz.env.gain.cancelScheduledValues(t);
+  voz.env.gain.setValueAtTime(voz.env.gain.value, t);
+  voz.env.gain.setTargetAtTime(0, t, r / 4);
+  voz.lista.forEach(o => {
+    o.stop(t + r + 0.05);
+    o.onended = () => { try { lfoProf.disconnect(o.detune); } catch (e) {} };
+  });
+}
+function silenciarTodo() { [...voces.keys()].forEach(n => sonarOff(n)); activas.clear(); pintar(); }
+
+/* ===================== Octava ===================== */
+function cambiarOctava(nueva) {
+  nueva = Math.max(OCT_MIN, Math.min(OCT_MAX, nueva));
+  if (nueva === est.oct) return;
+  est.oct = nueva;
+  try { localStorage.setItem("handwave-octava", String(nueva)); } catch (_) {}
+  mostrarOctava();
+  registrar(`Octava ${4 + est.oct}`);
+  pintar();
+}
+function mostrarOctava() {
+  const o = 4 + est.oct;
+  $("octNum").textContent = o;
+  $("octMenos").disabled = est.oct <= OCT_MIN;
+  $("octMas").disabled = est.oct >= OCT_MAX;
+  $("octRango").innerHTML = `Del DO${o} al DO${o + 1}. <span class="atajos">Atajos: <kbd>Z</kbd> baja, <kbd>X</kbd> sube.</span>`;
+  document.querySelectorAll("#puntos button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.o === est.oct)));
+}
+function construirPuntos() {
+  const cont = $("puntos");
+  for (let o = OCT_MIN; o <= OCT_MAX; o++) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.o = o;
+    b.setAttribute("aria-label", `Octava ${4 + o}`);
+    b.innerHTML = "<i></i>";
+    b.addEventListener("click", () => { audio(); cambiarOctava(o); });
+    cont.appendChild(b);
+  }
+}
+
+/* ===================== Teoría: escribir la nota como la pensó el músico ===================== */
+// Si se sabe el dedo, la palma y la inclinación, la nota se escribe con su alteración real
+// (MI♯ en vez de FA, DO♭ en vez de SI). Si no, se nombra con sostenidos.
+function deducirDedo(n) {
+  if (est.dedoPendiente !== null) { const d = est.dedoPendiente; est.dedoPendiente = null; return d; }
+  if (est.palma !== null && est.alt !== null) {
+    const i = NOTAS[est.palma].indexOf(n - est.alt);
+    if (i >= 0) return i;
+  }
+  return null;
+}
+function grafia(n, dedo) {
+  if (dedo !== null && est.palma !== null) {
+    const base = NOTAS[est.palma][dedo];
+    const d = n - base;
+    if (Math.abs(d) <= 1) {
+      return { texto: LETRAS[LETRA[base % 12]] + (d === 1 ? "♯" : d === -1 ? "♭" : ""), letra: LETRA[base % 12], oct: octava(base), acc: d };
+    }
+  }
+  const pc = n % 12;
+  if (LETRA[pc] !== undefined) return { texto: NOMBRES[pc], letra: LETRA[pc], oct: octava(n), acc: 0 };
+  return { texto: NOMBRES[pc], letra: LETRA[pc - 1], oct: octava(n), acc: 1 };
+}
+function dinamica(vel) { return DINAMICAS.findIndex(([, max]) => vel < max); }
+
+/* ===================== Teclado ===================== */
+function construirTeclado() {
+  const tec = $("teclado");
+  const blancas = [59, 60, 62, 64, 65, 67, 69, 71, 72, 74];
+  const negras = { 61: 2, 63: 3, 66: 5, 68: 6, 70: 7, 73: 9 };   // n.º de teclas blancas a su izquierda
+  blancas.forEach(n => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tecla"; b.dataset.n = n;
+    b.innerHTML = `<span class="dedo-tag"></span><span class="tecla-nombre"></span>`;
+    tec.appendChild(b);
+  });
+  Object.entries(negras).forEach(([n, pos]) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tecla negra"; b.dataset.n = n;
+    b.innerHTML = `<span class="dedo-tag"></span>`;
+    const w = "((100% - 9 * var(--g)) / 10)";
+    b.style.left = `calc(${pos} * (${w} + var(--g)) - var(--g) / 2 - ${w} * 0.3)`;
+    b.style.width = `calc(${w} * 0.6)`;
+    tec.appendChild(b);
+  });
+  pulsable(tec, el => el.closest(".tecla"), el => +el.dataset.n);
+}
+
+/* ===================== Práctica sin guante ===================== */
+function construirDedos() {
+  const cont = $("dedos");
+  ORDEN_MANO.forEach(i => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "dedo"; b.dataset.i = i;
+    b.innerHTML = `<b></b><small>${DEDOS[i]}</small>`;
+    cont.appendChild(b);
+  });
+  pulsable(cont, el => el.closest(".dedo"), el => {
+    // Se envían los mismos mensajes que el guante v3: palma, inclinación y dedo
+    const { palma, alt } = simularPostura();
+    recibir([0xB0, 20, +el.dataset.i], "pantalla");
+    return NOTAS[palma][+el.dataset.i] + alt;
+  });
+}
+function simularPostura() {
+  const palma = +document.querySelector("input[name=palma]:checked").value;
+  const alt = +document.querySelector("input[name=alt]:checked").value;
+  recibir([0xB0, 21, palma ? 127 : 0], "pantalla");
+  recibir([0xB0, 22, alt === 1 ? 127 : alt === -1 ? 0 : 64], "pantalla");
+  return { palma, alt };
+}
+
+// Mantener presionado = nota sonando; soltar = apagar la misma nota.
+function pulsable(cont, buscar, aNota) {
+  const porPuntero = new Map();
+  const soltar = id => {
+    const n = porPuntero.get(id); if (n === undefined) return;
+    porPuntero.delete(id);
+    recibir([0x80, n, 0], "pantalla");
+  };
+  const tocar = (id, el) => {
+    const n = aNota(el);
+    porPuntero.set(id, n);
+    recibir([0x90, n, +$("simVel").value], "pantalla");
+    try { navigator.vibrate && navigator.vibrate(8); } catch (_) {}
+  };
+  cont.addEventListener("pointerdown", e => {
+    const el = buscar(e.target); if (!el) return;
+    e.preventDefault();
+    try { cont.setPointerCapture(e.pointerId); } catch (_) {}
+    tocar(e.pointerId, el);
+  });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(t => cont.addEventListener(t, e => soltar(e.pointerId)));
+  cont.addEventListener("keydown", e => {
+    if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+      const el = buscar(e.target); if (!el) return;
+      e.preventDefault(); tocar("k", el);
+    }
+  });
+  cont.addEventListener("keyup", e => { if (e.key === " " || e.key === "Enter") soltar("k"); });
+}
+
+/* ===================== Dibujo de la mano ===================== */
+// Vista desde arriba de la mano derecha. Con la palma arriba se dibuja en espejo.
+const DEDO_GEO = { 3: [124, 46], 2: [168, 24], 1: [212, 38], 0: [254, 72] };   // x central, punta
+const C = { piel: "#2c2150", borde: "#b3a6d4", rosa: "#ff2e7e", cian: "#4cc9f0", tenue: "#7d70a3" };
+function dibujarMano(girar = false) {
+  const svg = $("manoSvg");
+  const arriba = est.palma === 1;
+  const X = x => arriba ? 320 - x : x;
+  const pres = [...activas.values()].reduce((m, a) => Math.max(m, a.vel), 0) / 127;
+  const dedosOn = new Set([...activas.values()].map(a => a.dedo));
+  const T = "font-family='Atkinson Hyperlegible, system-ui'";
+  let s = "";
+  // pulgar con el sensor de fuerza
+  const pBase = X(104), pPunta = X(40);
+  s += `<path d="M${pBase} 196 L${pPunta} 156" stroke="${C.borde}" stroke-width="44" stroke-linecap="round"/>`;
+  s += `<path d="M${pBase} 196 L${pPunta} 156" stroke="${C.piel}" stroke-width="40" stroke-linecap="round"/>`;
+  s += `<circle cx="${pPunta + (arriba ? -2 : 2)}" cy="156" r="14" fill="${C.cian}" fill-opacity="${(0.15 + pres * 0.85).toFixed(2)}" stroke="${C.cian}" stroke-width="2"/>`;
+  // dedos
+  for (const i of [3, 2, 1, 0]) {
+    const [cx, y0] = DEDO_GEO[i], x = X(cx), on = dedosOn.has(i);
+    s += `<rect x="${x - 19}" y="${y0}" width="38" height="${168 - y0}" rx="19" fill="${C.piel}" stroke="${C.borde}" stroke-width="2"/>`;
+    if (on) s += `<circle cx="${x}" cy="${y0 + 17}" r="26" fill="${C.rosa}" fill-opacity=".25"/>`;
+    s += `<rect x="${x - 14}" y="${y0 + 5}" width="28" height="24" rx="11" fill="${on ? C.rosa : "#4a2f6e"}" stroke="${C.rosa}" stroke-width="2"/>`;
+  }
+  // palma
+  const l = Math.min(X(98), X(282)), r = Math.max(X(98), X(282));
+  s += `<rect x="${l}" y="146" width="${r - l}" height="140" rx="38" fill="${arriba ? "#3a2a62" : C.piel}" stroke="${C.borde}" stroke-width="2"/>`;
+  if (arriba) {
+    s += `<path d="M${X(120)} 196 Q${X(190)} 182 ${X(262)} 202 M${X(128)} 232 Q${X(182)} 218 ${X(240)} 252" fill="none" stroke="${C.tenue}" stroke-width="2.5" stroke-linecap="round"/>`;
+    s += `<text x="${X(190)}" y="274" text-anchor="middle" ${T} font-size="12" fill="${C.borde}">palma arriba</text>`;
+  } else {
+    s += `<rect x="${X(150) - 34}" y="170" width="68" height="40" rx="6" fill="#1d1533" stroke="${C.tenue}" stroke-width="1.5"/>`;
+    s += `<text x="${X(150)}" y="194" text-anchor="middle" ${T} font-size="11" fill="${C.borde}">ESP32</text>`;
+    s += `<rect x="${X(236) - 20}" y="222" width="40" height="28" rx="4" fill="#26336b" stroke="${C.tenue}" stroke-width="1.5"/>`;
+    s += `<text x="${X(236)}" y="240" text-anchor="middle" ${T} font-size="9" fill="${C.borde}">MPU</text>`;
+    s += `<text x="${X(190)}" y="274" text-anchor="middle" ${T} font-size="12" fill="${C.borde}">dorso, palma abajo</text>`;
+  }
+  svg.innerHTML = s;
+  svg.setAttribute("aria-label", est.palma === null ? "Mano, sin dato de orientación" : `Mano con la palma ${arriba ? "arriba" : "abajo"}`);
+  if (girar && !reducir) { svg.classList.remove("girando"); void svg.getBoundingClientRect(); svg.classList.add("girando"); }
+}
+function notaDeDedo(i) {
+  const palma = est.palma ?? 0, alt = est.alt ?? 0;
+  const base = NOTAS[palma][i];
+  return LETRAS[LETRA[base % 12]] + (alt === 1 ? "♯" : alt === -1 ? "♭" : "");
+}
+const ICONO_PLAY = `<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z"/></svg>`;
+function dibujarMapa() {
+  const dedosOn = new Set([...activas.values()].map(a => a.dedo));
+  const palma = est.palma ?? 0, alt = est.alt ?? 0;
+  $("mapa").innerHTML = ORDEN_MANO.map(i => {
+    const n = NOTAS[palma][i] + alt, altura = n + 12 * est.oct;
+    const escrita = notaDeDedo(i), suena = nombre(n);
+    const oct = octava(NOTAS[palma][i]) + est.oct;
+    const extra = escrita !== suena ? `suena ${suena}` : `${Math.round(freq(altura))} Hz`;
+    return `<li class="${dedosOn.has(i) ? "on" : ""}"><span class="icono-fila">${ICONO_PLAY}</span><span class="titulo"><b>${escrita}${oct}</b><small>${DEDOS[i]}</small></span><span class="extra">${extra}</span></li>`;
+  }).join("");
+}
+
+function dibujarTablaDedos() {
+  const dedosOn = new Set([...activas.values()].map(a => a.dedo));
+  const nombreBase = n => `${LETRAS[LETRA[n % 12]]}${octava(n) + est.oct}`;
+  $("tablaDedos").querySelector("tbody").innerHTML = ORDEN_MANO.map(i =>
+    `<tr><td>${DEDOS[i]}</td>` + [0, 1].map(c =>
+      `<td data-col="${c}" class="${est.palma === c ? "actual" : ""}${est.palma === c && dedosOn.has(i) ? " on" : ""}">${nombreBase(NOTAS[c][i])}</td>`).join("") + `</tr>`).join("");
+  $("tablaDedos").querySelectorAll("thead th[data-col]").forEach(th => th.classList.toggle("actual", est.palma === +th.dataset.col));
+}
+/* ===================== Pentagrama ===================== */
+// Clave de sol. Línea inferior = MI4. Las octavas cambiadas se marcan con 8va / 8vb / 15ma / 15mb,
+// como en una partitura, para que la nota siga leyéndose dentro del pentagrama.
+function dibujarPentagrama(nueva = false) {
+  const svg = $("pentagrama");
+  const angosto = svg.clientWidth && svg.clientWidth < 520;
+  const W = angosto ? 380 : 640, max = angosto ? 6 : 12;
+  svg.setAttribute("viewBox", `0 0 ${W} 136`);
+  const y = paso => 82 - (paso - 30) * 6;               // paso = octava*7 + letra; MI4 = 30
+  let s = [34, 46, 58, 70, 82].map(v => `<line class="linea" x1="8" x2="${W - 8}" y1="${v}" y2="${v}"/>`).join("");
+  s += `<text class="clave" x="12" y="90">𝄞</text>`;
+  if (!historia.length) s += `<text class="vacio" x="84" y="126">Las notas que toques aparecen aquí.</text>`;
+  const vis = historia.slice(-max), x0 = 96, dx = 44;
+  vis.forEach((h, k) => {
+    const x = x0 + k * dx, p = h.oct * 7 + h.letra, yy = y(p);
+    const ultima = k === vis.length - 1;
+    let g = "";
+    if (p <= 28) g += `<line class="linea" x1="${x - 12}" x2="${x + 12}" y1="94" y2="94"/>`;   // línea adicional del DO4
+    if (p >= 40) g += `<line class="linea" x1="${x - 12}" x2="${x + 12}" y1="22" y2="22"/>`;
+    if (h.acc) g += `<text class="acc" x="${x - 22}" y="${yy + 7}">${h.acc === 1 ? "♯" : "♭"}</text>`;
+    g += `<ellipse class="cabeza-n" cx="${x}" cy="${yy}" rx="7.5" ry="5.5" transform="rotate(-20 ${x} ${yy})"/>`;
+    if (h.sh > 0) g += `<text class="ottava" x="${x}" y="16">${OTTAVA[h.sh]}</text>`;
+    if (h.sh < 0) g += `<text class="ottava" x="${x}" y="112">${OTTAVA[h.sh]}</text>`;
+    g += `<text class="nombre" x="${x}" y="128">${h.texto}${h.oct + h.sh}</text>`;
+    s += `<g class="${ultima ? "actual" : ""}${ultima && nueva ? " nueva" : ""}" opacity="${(0.35 + 0.65 * (k + 1) / vis.length).toFixed(2)}">${g}</g>`;
+  });
+  svg.innerHTML = s;
+}
+
+/* ===================== Pantalla ===================== */
+function pintar() {
+  const grupo = new Map();
+  if (est.palma !== null) NOTAS[est.palma].forEach((b, i) => grupo.set(b + (est.alt ?? 0), DEDOS[i]));
+  document.querySelectorAll(".tecla").forEach(t => {
+    const n = +t.dataset.n, a = activas.get(n);
+    t.classList.toggle("activa", !!a);
+    if (a) t.style.setProperty("--k", (a.vel / 127).toFixed(2));
+    t.classList.toggle("grupo", grupo.has(n));
+    t.querySelector(".dedo-tag").textContent = grupo.has(n) ? grupo.get(n).slice(0, 3) : "";
+    const nom = t.querySelector(".tecla-nombre");
+    const altura = n + 12 * est.oct;
+    if (nom) nom.textContent = n % 12 === 0 ? `${nombre(n)}${octava(altura)}` : nombre(n);
+    t.setAttribute("aria-label", `${nombre(n)}${octava(altura)}`);
+  });
+  const dedosOn = new Set([...activas.values()].map(a => a.dedo));
+  document.querySelectorAll(".dedo").forEach(b => {
+    b.classList.toggle("activa", dedosOn.has(+b.dataset.i));
+    b.querySelector("b").textContent = notaDeDedo(+b.dataset.i);
+  });
+  const sonando = activas.size > 0;
+  $("disco").classList.toggle("sonando", sonando);
+  if (!sonando) mostrarAnillo(0);
+  dibujarMano(); dibujarMapa(); dibujarTablaDedos();
+}
+function mostrarAnillo(vel) {
+  const L = 590.6, f = vel / 127;
+  $("arco").setAttribute("stroke-dashoffset", (L * (1 - f)).toFixed(1));
+  const ang = -Math.PI / 2 + f * 2 * Math.PI;
+  $("punto").setAttribute("cx", (100 + 94 * Math.cos(ang)).toFixed(1));
+  $("punto").setAttribute("cy", (100 + 94 * Math.sin(ang)).toFixed(1));
+  $("punto").setAttribute("opacity", f ? 1 : 0);
+}
+function mostrarNota(n, vel, g, dedo) {
+  const altura = n + 12 * est.oct, oct = g.oct + est.oct;
+  const nota = $("nota");
+  nota.classList.remove("vacia");
+  nota.textContent = g.texto;
+  document.documentElement.style.setProperty("--vel", (vel / 127).toFixed(3));
+  mostrarAnillo(vel);
+  const suena = nombre(n);
+  const p = $("pildora");
+  p.classList.remove("vacia");
+  p.textContent = g.texto !== suena ? `${g.texto}${oct}, suena como ${suena}` : `${g.texto}${oct}`;
+  const d = dinamica(vel);
+  $("detalle").textContent = [`${Math.round(freq(altura))} Hz`, DINAMICAS[d][0], dedo !== null ? DEDOS[dedo].toLowerCase() : null].filter(Boolean).join(", ");
+  document.querySelectorAll("#niveles span").forEach((s, i) => s.classList.toggle("on", i <= d));
+  $("niveles").setAttribute("aria-label", `Intensidad ${vel} de 127, ${DINAMICAS[d][0]}`);
+  $("velNum").textContent = vel;
+}
+function mostrarPalma() {
+  $("palmaTxt").textContent = est.palma === null ? "—" : est.palma ? "Arriba" : "Abajo";
+  $("palmaIcono").classList.toggle("arriba", est.palma === 1);
+}
+function mostrarAlt() {
+  document.querySelectorAll("#trio span").forEach(s => s.classList.toggle("on", est.alt !== null && +s.dataset.a === est.alt));
+  const nom = { "-1": "bemol", "0": "natural", "1": "sostenido" };
+  $("trio").setAttribute("aria-label", est.alt === null ? "Sin dato de inclinación" : `Inclinación: ${nom[est.alt]}`);
+}
+let animandoOnda = false, fase = 0;
+function mostrarVibrato(v) {
+  est.vib = v;
+  document.documentElement.style.setProperty("--vib", (v / 127).toFixed(3));
+  $("vibNum").textContent = v ? v : "";
+  aplicarVibrato();
+  if (v && !animandoOnda) { animandoOnda = true; requestAnimationFrame(ondaPaso); }
+  if (!v) dibujarOnda(0);
+}
+function dibujarOnda(amp) {
+  let d = "M0 20";
+  for (let x = 0; x <= 120; x += 3) d += `L${x} ${(20 + Math.sin(x / 7 + fase) * amp).toFixed(2)}`;
+  $("ondaPath").setAttribute("d", d);
+}
+function ondaPaso() {
+  if (!est.vib) { animandoOnda = false; dibujarOnda(0); return; }
+  if (!reducir) fase += 0.35;
+  dibujarOnda(2 + (est.vib / 127) * 15);
+  requestAnimationFrame(ondaPaso);
+}
+
+const lineas = [];
+function registrar(txt) {
+  const h = new Date();
+  const hora = h.toLocaleTimeString("es-CO", { hour12: false }) + "." + String(h.getMilliseconds()).padStart(3, "0");
+  lineas.unshift(`${hora}  ${txt}`);
+  if (lineas.length > 60) lineas.pop();
+  $("log").textContent = lineas.join("\n");
+}
+
+// Punto único de entrada: mensajes del guante o de la pantalla.
+function recibir(msg, origen) {
+  const [s, d1, d2] = msg;
+  const tipo = s & 0xF0;
+  const quien = origen === "guante" ? "Guante" : "Pantalla";
+  if (tipo === 0x90 && d2 > 0) {
+    const dedo = deducirDedo(d1);
+    const g = grafia(d1, dedo);
+    sonarOn(d1, d1 + 12 * est.oct, d2);
+    activas.set(d1, { vel: d2, dedo });
+    historia.push({ ...g, sh: est.oct }); if (historia.length > 12) historia.shift();
+    mostrarNota(d1, d2, g, dedo);
+    dibujarPentagrama(true);
+    if (est.conectado) marcarPaso(3);
+    registrar(`${quien}: ${g.texto}${g.oct + est.oct} (MIDI ${d1 + 12 * est.oct}), intensidad ${d2}${dedo !== null ? ", " + DEDOS[dedo].toLowerCase() : ""}`);
+  } else if (tipo === 0x80 || (tipo === 0x90 && d2 === 0)) {
+    sonarOff(d1); activas.delete(d1);
+  } else if (tipo === 0xB0) {
+    if (d1 === 1) mostrarVibrato(d2);
+    else if (d1 === 20) est.dedoPendiente = d2 & 3;
+    else if (d1 === 21) { const p = d2 >= 64 ? 1 : 0; if (p !== est.palma) { est.palma = p; mostrarPalma(); dibujarMano(true); } }
+    else if (d1 === 22) { est.alt = d2 < 32 ? -1 : d2 > 96 ? 1 : 0; mostrarAlt(); }
+    else if (d1 === 120 || d1 === 123) silenciarTodo();
+    else return;
+  }
+  pintar();
+}
+
+/* ===================== Guía ===================== */
+function marcarPaso(n) {
+  for (let i = 1; i <= 3; i++) $("paso" + i).classList.toggle("hecho", i <= n);
+}
+
+/* ===================== Bluetooth ===================== */
+const MIDI_SERVICIO = "03b80e5a-ede8-4b33-a751-6ce34ec4c700";
+const MIDI_CARACT = "7772e5db-3868-4112-a1a9-f2669d106bf3";
+let dispositivo = null, caract = null, manual = false, wakeLock = null;
+
+function estado(s, txt) { $("estado").dataset.s = s; $("estadoTxt").textContent = txt; }
+function avisar(txt) { const a = $("aviso"); a.textContent = txt; a.hidden = !txt; if (txt) $("guia").hidden = false; }
+
+function revisarSoporte() {
+  if (!("bluetooth" in navigator)) {
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    avisar(ios
+      ? "Safari no permite conectar el guante. Abre esta página en la app Bluefy. Mientras tanto puedes probar sin guante."
+      : "Este navegador no permite Bluetooth desde una página web. Ábrela en Chrome o Edge. Mientras tanto puedes probar sin guante.");
+    return false;
+  }
+  if (!window.isSecureContext) {
+    avisar("El Bluetooth web solo funciona en páginas https. Abre la app desde su dirección de GitHub Pages.");
+    return false;
+  }
+  return true;
+}
+
+async function conectar() {
+  audio();
+  if (dispositivo && dispositivo.gatt.connected) { manual = true; dispositivo.gatt.disconnect(); return; }
+  if (!revisarSoporte()) return;
+  avisar("");
+  try {
+    estado("buscando", "Buscando el guante");
+    dispositivo = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [MIDI_SERVICIO] }, { namePrefix: "Guante" }, { namePrefix: "HandWave" }],
+      optionalServices: [MIDI_SERVICIO]
+    });
+    dispositivo.addEventListener("gattserverdisconnected", alPerder);
+    await abrir();
+  } catch (e) {
+    if (e.name === "NotFoundError") { estado("off", "Guante sin conectar"); return; }
+    estado("error", "No se pudo conectar");
+    avisar(explicar(e));
+  }
+}
+async function abrir() {
+  estado("buscando", `Conectando a ${dispositivo.name || "guante"}`);
+  const srv = await dispositivo.gatt.connect();
+  const s = await srv.getPrimaryService(MIDI_SERVICIO);
+  caract = await s.getCharacteristic(MIDI_CARACT);
+  caract.addEventListener("characteristicvaluechanged", e => {
+    const v = e.target.value;
+    parseBleMidi(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)).forEach(m => recibir(m, "guante"));
+  });
+  await caract.startNotifications();
+  manual = false; est.conectado = true;
+  estado("conectado", `Conectado a ${dispositivo.name || "guante"}`);
+  $("btnTxt").textContent = "Desconectar";
+  $("btnConectar").classList.add("conectado");
+  marcarPaso(2);
+  $("guia").hidden = true;
+  registrar("Guante conectado");
+  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch (_) {}
+}
+async function alPerder() {
+  est.conectado = false;
+  silenciarTodo(); mostrarVibrato(0);
+  $("btnTxt").textContent = "Conectar guante";
+  $("btnConectar").classList.remove("conectado");
+  registrar("Guante desconectado");
+  try { await wakeLock?.release(); } catch (_) {}
+  if (manual) { estado("off", "Guante sin conectar"); $("guia").hidden = false; marcarPaso(0); return; }
+  for (let intento = 1; intento <= 5; intento++) {
+    estado("buscando", `Reconectando, intento ${intento} de 5`);
+    await new Promise(r => setTimeout(r, 1200 * intento));
+    try { await abrir(); return; } catch (_) {}
+  }
+  estado("error", "Se perdió la conexión");
+  marcarPaso(0);
+  avisar("No se pudo reconectar. Revisa que el guante tenga batería y esté encendido, y toca “Conectar guante”.");
+}
+function explicar(e) {
+  const m = String(e && e.message || e);
+  if (e.name === "SecurityError" || /permissions policy|disallowed|feature policy|sandbox/i.test(m))
+    return "Esta vista no deja usar Bluetooth. Abre la app desde su propia dirección (GitHub Pages) en Chrome.";
+  if (e.name === "NotSupportedError" || /adapter|not available/i.test(m))
+    return "El Bluetooth del dispositivo está apagado. Actívalo y vuelve a intentar.";
+  if (e.name === "NetworkError")
+    return "El guante no respondió. Si está emparejado en los ajustes de Bluetooth, olvídalo ahí y reinicia el ESP32.";
+  return `No se pudo conectar: ${m}`;
+}
+
+/* ===================== Modo escenario ===================== */
+async function entrarEscena() {
+  document.body.classList.add("escena");
+  try { await document.documentElement.requestFullscreen?.(); } catch (_) {}
+}
+function salirEscena() {
+  document.body.classList.remove("escena");
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {}
+}
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) document.body.classList.remove("escena"); });
+
+/* ===================== Controles ===================== */
+$("btnConectar").addEventListener("click", conectar);
+$("btnProbar").addEventListener("click", () => {
+  audio();
+  const p = $("practica"); p.open = true; simularPostura();
+  p.scrollIntoView({ behavior: reducir ? "auto" : "smooth", block: "start" });
+});
+$("btnEscena").addEventListener("click", entrarEscena);
+$("btnSalir").addEventListener("click", salirEscena);
+$("octMenos").addEventListener("click", () => { audio(); cambiarOctava(est.oct - 1); });
+$("octMas").addEventListener("click", () => { audio(); cambiarOctava(est.oct + 1); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { salirEscena(); return; }
+  if (e.target.closest("input, textarea, select") || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === "z" || e.key === "Z") cambiarOctava(est.oct - 1);
+  if (e.key === "x" || e.key === "X") cambiarOctava(est.oct + 1);
+});
+$("practica").addEventListener("toggle", e => { if (e.target.open) simularPostura(); });
+$("vol").addEventListener("input", e => { $("oVol").textContent = e.target.value; if (master) master.gain.setTargetAtTime(e.target.value / 100, ctx.currentTime, 0.02); });
+$("prof").addEventListener("input", e => { $("oProf").textContent = e.target.value; aplicarVibrato(); });
+$("simVel").addEventListener("input", e => { $("oSimVel").textContent = e.target.value; });
+$("simVib").addEventListener("input", e => { $("oSimVib").textContent = e.target.value; recibir([0xB0, 1, +e.target.value], "pantalla"); });
+document.querySelectorAll("input[name=palma], input[name=alt]").forEach(r => r.addEventListener("change", simularPostura));
+document.addEventListener("pointerdown", () => audio(), { once: true });
+document.addEventListener("visibilitychange", () => { if (document.hidden) silenciarTodo(); });
+window.addEventListener("resize", () => dibujarPentagrama());
+
+construirTeclado();
+construirDedos();
+construirPuntos();
+mostrarOctava(); mostrarPalma(); mostrarAlt(); dibujarOnda(0);
+dibujarPentagrama();
+pintar();
+if (!("bluetooth" in navigator) || !window.isSecureContext) revisarSoporte();
+</script>
+</body>
+</html>
